@@ -33,4 +33,176 @@ scale_colour_discrete = scale_color_viridis_d
 scale_fill_discrete = scale_fill_viridis_d
 ```
 
-# Statistics
+# Binomial distribution
+
+
+The probability that a patient fails to follow up in a given month is 15%. 
+A pilot study is conducted to assess feasibility involving 5 patients. 
+
+To obtain a binomial probability for a single X value: 
+dbinom(x, n, p) 
+
+So for Example 1, we have: dbinom(0, 5, 0.15) 
+
+To obtain a probability for values less than or equal to X:
+pbinom(x, n, p) 
+
+So for Example 2, we have: pbinom(2, 5, 0.15)
+
+# Poisson Distribution
+
+Example: 
+The emergency room at CUMC receives an average of 7.5 patients each hour. 
+
+To obtain a poisson probability for a single X value in R: 
+dpois(x, lambda)
+
+So for (a) above we have: dpois(9, 7.5) 
+
+To obtain a probability for values less than or equal to X in R: 
+ppois(x, lambda)
+
+So for (b) above we have: 1 - ppois(3, 7.5) 
+
+# Bootstrapping
+
+## read in the data
+
+```{r}
+wloss_data = read_table("./data/Weightloss20.txt")
+```
+
+### define the object with the values of interest
+
+```{r}
+loss = wloss_data$loss
+```
+
+### let's look at a histogram of the loss values
+```{r}
+hist(loss)
+```
+
+
+### compute the sample statistic from the observed sample
+```{r}
+xbar <- mean(loss)
+xbar
+```
+
+
+### how to draw one bootstrap sample
+
+```{r}
+sample(loss, size = 20, replace = T)
+```
+
+### Set a seed
+you don't get the same sample as above since it is randomly selected to get the same sample, set a seed and run the two lines below together
+
+```{r}
+set.seed(1234)
+sample(loss, size = 20, replace = T)
+```
+
+
+we want to draw many bootstrap samples, not just one so we need to call the sample function many times; we can sit there and hit "control-return" B times or we can use what's called a "for loop"; let's say B = 50 for now
+
+
+```{r}
+for(j in 1:50) {sample(loss, size = 20, replace = T)}
+```
+
+ok it looks like something ran but we don't see anything; that's because we
+didn't ask R to store the 50 samples anywhere; so before we use the for loop
+we need to create an object with 50 slots to store the 50 samples
+
+```{r}
+bs_samps <- vector("list", 50)
+```
+
+let's put it together
+
+```{r}
+bs_samps <- vector("list", 50)
+set.seed(1234)
+for(j in 1:50) 
+  {bs_samps[[j]] = sample(loss, size = 20, replace = T)}
+```
+
+bs_samps contains the 50 bootstrap samples; we now want to compute the 
+bootstrap replications - compute the statistic (the mean in this example)  of interest on each bootstrap sample
+
+```{r}
+bs_reps = lapply(bs_samps, mean)
+```
+
+but it's actually easier to have these values as a vector rather than as a list so we can "unlist" the object
+
+```{r}
+bs_reps <- unlist(lapply(bs_samps, mean))
+```
+
+now we can analyze the bootstrap replications to get an understanding 
+of the sampling distribution of the statistic we are interested in 
+(i.e., the sample mean of the weight loss values)
+
+observe the shape of the distribution and standard deviation of the bootstrap replications
+```{r}
+hist(bs_reps) 
+sd(bs_reps) 
+```
+
+
+### Bootstrapping code
+
+first read in the data set that you want to use
+
+X <- "variable of interest"
+B <- "number of bootstrap samples to take"
+seed_num <- "seed number"
+stat <- "statistic that you want to look at" # for now this can be mean, sd, var
+bs_samps <- vector("list", B)
+set.seed(seed_num)
+for(j in 1:B) 
+  {bs_samps[[j]] <- sample(X, size = length(X), replace = T)}
+bs_reps <- unlist(lapply(bs_samps, stat))
+hist(bs_reps)
+sd(bs_reps)
+
+## Bootstrapping Examples
+####################################################################################
+Example 1:
+Construct the bootstrap distribution for the sample mean of the weightloss values using the full sample of 100 subjects.  Use B = 1000 bootstrap samples.
+####################################################################################
+wloss_data <- read.table("/Volumes/Passport/Teaching/P6104 Intro Online/P6104 Online 2016/Weekly Resources/Module 04/Lecture Notes Module 04/Weightloss.txt", header = T)
+X <- wloss_data$loss
+B <- 1000
+seed_num <- 1234
+stat <- mean
+bs_samps <- vector("list", B)
+set.seed(seed_num)
+for(j in 1:B) {
+	bs_samps[[j]] <- sample(X, size = length(X), replace = T)
+}
+bs_reps <- unlist(lapply(bs_samps, stat))
+hist(bs_reps)
+sd(bs_reps)
+
+####################################################################################
+Example 2:
+Construct the bootstrap distribution for the sample standard deviation of the weightloss values using the full sample of 100 subjects.  Use B = 1000 bootstrap samples.
+####################################################################################
+wloss_data <- read.table("/Volumes/Passport/Teaching/P6104 Intro Online/P6104 Online 2016/Weekly Resources/Module 04/Lecture Notes Module 04/Weightloss.txt", header = T)
+X <- wloss_data$loss
+B <- 1000
+seed_num <- 1234
+stat <- sd
+bs_samps <- vector("list", B)
+set.seed(seed_num)
+for(j in 1:B) {
+	bs_samps[[j]] <- sample(X, size = length(X), replace = T)
+}
+bs_reps <- unlist(lapply(bs_samps, stat))
+hist(bs_reps)
+sd(bs_reps)
