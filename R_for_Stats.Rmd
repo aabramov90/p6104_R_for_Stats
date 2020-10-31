@@ -11,8 +11,9 @@ output:
 # Setup
 ```{r, setup}
 library(tidyverse)
-library(patchwork)
-library(hexbin)
+library(readr)
+library(pwr)
+
 
 knitr::opts_chunk$set(
   fig.width = 6,
@@ -156,19 +157,31 @@ sd(bs_reps)
 
 ### Bootstrapping code
 
-first read in the data set that you want to use
+First read in the data set that you want to use.  
 
-X <- "variable of interest"
-B <- "number of bootstrap samples to take"
-seed_num <- "seed number"
-stat <- "statistic that you want to look at" # for now this can be mean, sd, var
-bs_samps <- vector("list", B)
+Here's an example with a variable named "heights", bootstrapping to 5000 and working with a sampling mean.
+
+```{r, eval = FALSE}
+var_1 <- 
+boots <- 5000
+seed_num <- 8675309
+stat <- mean
+
+bs_samps <- vector("list", boots)
 set.seed(seed_num)
-for(j in 1:B) 
-  {bs_samps[[j]] <- sample(X, size = length(X), replace = T)}
+
+for(j in 1:boots) 
+  {bs_samps[[j]] <- sample(var_1, size = length(var_1), replace = T)}
+
 bs_reps <- unlist(lapply(bs_samps, stat))
 hist(bs_reps)
+qqnorm(bs_reps)
+qqline(bs_reps)
 sd(bs_reps)
+
+```
+
+
 
 ## Bootstrapping Examples
 ####################################################################################
@@ -206,3 +219,50 @@ for(j in 1:B) {
 bs_reps <- unlist(lapply(bs_samps, stat))
 hist(bs_reps)
 sd(bs_reps)
+
+# Hypothesis testing, t-distributions
+
+## Chicken pox example
+
+Load data
+```{r}
+pox_df = read.table("./data/pox.txt") %>% 
+  janitor::clean_names() %>% 
+  mutate(
+    v1 = as.numeric(v1),
+    v2 = as.numeric(v2)) %>% 
+  drop_na() %>% 
+  rename(
+    id = v1,
+    age = v2) %>% 
+  select(!id)
+```
+
+Mean of the Sample
+```{r}
+mean(pox_df$age)
+```
+
+Standard Deviation of the Sample
+```{r}
+sd(pox_df$age)
+```
+
+Testing 
+
+```{r}
+boxplot(pox_df$age)
+
+hist(pox_df$age)
+
+qqnorm(pox_df$age)
+```
+
+t-test
+```{r}
+t.test(pox_df$age, mu = 5, alternative = "greater", conf.level = 0.95)
+```
+
+Can also omit the alternative argument for a two sample t-test and the conf.level which is default to 0.95
+
+# Power Calculations
